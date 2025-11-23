@@ -38,16 +38,16 @@ class ImcSession(object):
 
     def __init__(
         self,
-        ip,
-        username,
-        password,
-        port=None,
-        secure=None,
-        proxy=None,
-        auto_refresh=False,
-        force=False,
-        timeout=None,
-        logger=None,
+        ip: str,
+        username: str,
+        password: str,
+        port: int | None = None,
+        secure: bool | None = None,
+        proxy: str | None = None,
+        auto_refresh: bool = False,
+        force: bool = False,
+        timeout: int | None = None,
+        logger: logging.Logger | None = None,
     ):
         self.__ip = ip
         self.__username = username
@@ -97,19 +97,19 @@ class ImcSession(object):
             self.__dump_xml = True
 
     @property
-    def ip(self):
+    def ip(self) -> str:
         return self.__ip
 
     @property
-    def username(self):
+    def username(self) -> str:
         return self.__username
 
     @property
-    def proxy(self):
+    def proxy(self) -> str | None:
         return self.__proxy
 
     @property
-    def uri(self):
+    def uri(self) -> str:
         return self.__uri
 
     @property
@@ -164,7 +164,7 @@ class ImcSession(object):
     def version(self):
         return self.__version
 
-    def __create_uri(self, port, secure):
+    def __create_uri(self, port: str | None, secure: bool | None) -> str:
         """
         Generates IMC URI used for connection
 
@@ -182,10 +182,10 @@ class ImcSession(object):
         port = _get_port(port, secure)
         protocol = _get_proto(port, secure)
 
-        uri = "%s://%s%s%s" % (protocol, self.__ip, ":", str(port))
+        uri = f"{protocol}://{self.__ip}:{port}"
         return uri
 
-    def __clear(self):
+    def __clear(self) -> None:
         """
         Internal method to clear the session variables
         """
@@ -201,7 +201,7 @@ class ImcSession(object):
         self.__evt_channel = None
         self.__last_update_time = str(time.asctime())
 
-    def __update(self, response):
+    def __update(self, response) -> None:
         """
         Internal method to update the session variables
         """
@@ -768,19 +768,16 @@ class ImcSession(object):
         self.__driver.add_header(header_prop, header_value)
 
 
-def _get_port(port, secure):
+def _get_port(port: str | None, secure: bool | None) -> str:
     if port:
-        return int(port)
+        return port
 
     if secure is False:
-        return 80
-    return 443
+        return "80"
+    return "443"
 
 
-def _get_proto(port, secure):
-    if secure is None:
-        if port == "80":
-            return "http"
-    elif secure is False:
+def _get_proto(port: str | None, secure: bool | None) -> str:
+    if (secure is None and port == "80") or secure is False:
         return "http"
     return "https"
