@@ -11,12 +11,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from nose.tools import assert_equal
 from imcsdk.imchandle import ImcHandle
 
 
 def test_001_create_handle():
     handle = ImcHandle("192.168.1.1", "admin", "my_extra_secure_password")
-    assert_equal(handle.username, "admin")
-    assert_equal(handle.ip, "192.168.1.1")
-
+    assert handle.username == "admin"
+    assert handle.ip == "192.168.1.1"
