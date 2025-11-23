@@ -1,6 +1,6 @@
-bumpversion==0.5.3
-wheel==0.38.1
-nose==1.3.7
-mock==2.0.0
+bump2version
+wheel
+nose
+mock
 flake8
 pytest
