@@ -22,7 +22,7 @@ from .imccoremeta import ImcVersion
 from .imcdriver import ImcDriver
 from .imcgenutils import Progress
 
-log = logging.getLogger('imc')
+log = logging.getLogger("imc")
 
 
 class ImcSessionConstants:
@@ -36,8 +36,19 @@ class ImcSession(object):
     Parent class of ImcHandle, used internally by ImcHandle class.
     """
 
-    def __init__(self, ip, username, password, port=None, secure=None,
-                 proxy=None, auto_refresh=False, force=False, timeout=None, logger=None):
+    def __init__(
+        self,
+        ip,
+        username,
+        password,
+        port=None,
+        secure=None,
+        proxy=None,
+        auto_refresh=False,
+        force=False,
+        timeout=None,
+        logger=None,
+    ):
         self.__ip = ip
         self.__username = username
         self.__password = password
@@ -67,7 +78,7 @@ class ImcSession(object):
         self.__dump_xml = False
         self.__redirect = False
         self.__driver = ImcDriver(proxy=self.__proxy)
-        
+
         """
         Use the user-supplied logger if available, else fallback to default logger.
         This logging feature is provided to log the ImcSession logs and it will
@@ -82,7 +93,7 @@ class ImcSession(object):
             self.logger = log
 
         # In debug mode, log the XMLs to a file
-        if os.path.exists('/tmp/imcsdk_debug'):
+        if os.path.exists("/tmp/imcsdk_debug"):
             self.__dump_xml = True
 
     @property
@@ -196,6 +207,7 @@ class ImcSession(object):
         """
 
         from .imccoremeta import ImcVersion
+
         self.__cookie = response.out_cookie
         self.__session_id = response.out_session_id
         self.__version = ImcVersion(response.out_version)
@@ -254,22 +266,23 @@ class ImcSession(object):
 
     def dump_xml_request(self, elem):
         from . import imcxmlcodec as xc
+
         if not self.__dump_xml:
             return
 
         if elem.tag == "aaaLogin":
-            elem.attrib['inPassword'] = "*********"
+            elem.attrib["inPassword"] = "*********"
             xml_str = xc.to_xml_str(elem)
-            self.logger.info('%s ====> %s' % (self.__uri, xml_str))
-            elem.attrib['inPassword'] = self.__password
+            self.logger.info("%s ====> %s" % (self.__uri, xml_str))
+            elem.attrib["inPassword"] = self.__password
             xml_str = xc.to_xml_str(elem)
         else:
             xml_str = xc.to_xml_str(elem)
-            self.logger.info('%s ====> %s' % (self.__uri, xml_str))
+            self.logger.info("%s ====> %s" % (self.__uri, xml_str))
 
     def dump_xml_response(self, resp):
         if self.__dump_xml:
-            self.logger.info('%s <==== %s' % (self.__uri, resp))
+            self.logger.info("%s <==== %s" % (self.__uri, resp))
 
     def post_elem(self, elem, timeout=None):
         """
@@ -290,16 +303,18 @@ class ImcSession(object):
         from . import imcxmlcodec as xc
 
         if self._is_stale_cookie(elem):
-            elem.attrib['cookie'] = self.cookie
+            elem.attrib["cookie"] = self.cookie
 
         self.dump_xml_request(elem)
         xml_str = xc.to_xml_str(elem)
         if isinstance(ImcSessionConstants.SQ_HACK_STRING, str):
-            hack_string = ImcSessionConstants.SQ_HACK_STRING.encode('utf-8')
+            hack_string = ImcSessionConstants.SQ_HACK_STRING.encode("utf-8")
         else:
             hack_string = ImcSessionConstants.SQ_HACK_STRING
         if hack_string in xml_str:
-            xml_str = xml_str.replace(bytes(ImcSessionConstants.SQ_HACK_STRING, 'utf-8'), b'&apos;')
+            xml_str = xml_str.replace(
+                bytes(ImcSessionConstants.SQ_HACK_STRING, "utf-8"), b"&apos;"
+            )
             self.logger.info("QUERY after SQ_HACK_REPLACE:" + str(xml_str))
 
         response_str = self.post_xml(xml_str, timeout=timeout)
@@ -318,13 +333,8 @@ class ImcSession(object):
 
         return None
 
-    def file_download(
-            self,
-            url_suffix,
-            file_dir,
-            file_name,
-            progress=Progress()):
-        """
+    def file_download(self, url_suffix, file_dir, file_name, progress=Progress()):
+        r"""
         Downloads the file from the imc server
 
         Args:
@@ -346,24 +356,20 @@ class ImcSession(object):
 
         file_url = "%s/%s" % (self.__uri, url_suffix)
 
-        self.__driver.add_header('Cookie', 'imc-cookie=%s'
-                                 % self.__cookie)
+        self.__driver.add_header("Cookie", "imc-cookie=%s" % self.__cookie)
 
-        download_file(driver=self.__driver,
-                      file_url=file_url,
-                      file_dir=file_dir,
-                      file_name=file_name,
-                      progress=progress)
+        download_file(
+            driver=self.__driver,
+            file_url=file_url,
+            file_dir=file_dir,
+            file_name=file_name,
+            progress=progress,
+        )
 
-        self.__driver.remove_header('Cookie')
+        self.__driver.remove_header("Cookie")
 
-    def file_upload(
-            self,
-            url_suffix,
-            file_dir,
-            file_name,
-            progress=Progress()):
-        """
+    def file_upload(self, url_suffix, file_dir, file_name, progress=Progress()):
+        r"""
         Uploads the file on IMC server.
 
         Args:
@@ -388,16 +394,17 @@ class ImcSession(object):
 
         file_url = "%s/%s" % (self.__uri, url_suffix)
 
-        self.__driver.add_header('Cookie', 'imc-cookie=%s'
-                                 % self.__cookie)
+        self.__driver.add_header("Cookie", "imc-cookie=%s" % self.__cookie)
 
-        upload_file(self.__driver,
-                    uri=file_url,
-                    file_dir=file_dir,
-                    file_name=file_name,
-                    progress=progress)
+        upload_file(
+            self.__driver,
+            uri=file_url,
+            file_dir=file_dir,
+            file_name=file_name,
+            progress=progress,
+        )
 
-        self.__driver.remove_header('Cookie')
+        self.__driver.remove_header("Cookie")
 
     def _start_refresh_timer(self):
         """
@@ -427,8 +434,11 @@ class ImcSession(object):
         self.__cookie = response.out_cookie
 
     def _is_stale_cookie(self, elem):
-        return 'cookie' in elem.attrib and elem.attrib[
-            'cookie'] != "" and elem.attrib['cookie'] != self.cookie
+        return (
+            "cookie" in elem.attrib
+            and elem.attrib["cookie"] != ""
+            and elem.attrib["cookie"] != self.cookie
+        )
 
     def _refresh(self, auto_relogin=True):
         """
@@ -440,9 +450,7 @@ class ImcSession(object):
 
         self._stop_refresh_timer()
 
-        elem = aaa_refresh(self.__cookie,
-                           self.__username,
-                           self.__password)
+        elem = aaa_refresh(self.__cookie, self.__username, self.__password)
         response = self.post_elem(elem)
         if response.error_code != 0:
             self.__cookie = None
@@ -452,7 +460,7 @@ class ImcSession(object):
 
         self.__cookie = response.out_cookie
         self.__refresh_period = int(response.out_refresh_period)
-        self.__priv = response.out_priv.split(',')
+        self.__priv = response.out_priv.split(",")
         self.__domains = response.out_domains
         self.__last_update_time = str(time.asctime())
 
@@ -463,8 +471,7 @@ class ImcSession(object):
     def _is_fabric_interconnect(self):
         from .imcmethodfactory import config_resolve_class
 
-        nw_elem = config_resolve_class(cookie=self.__cookie,
-                                       class_id="networkElement")
+        nw_elem = config_resolve_class(cookie=self.__cookie, class_id="networkElement")
         try:
             nw_elem_response = self.post_elem(nw_elem)
             if nw_elem_response.error_code == 0:
@@ -486,8 +493,7 @@ class ImcSession(object):
         if self.__cookie and self.__cookie != "":
             if not self.__force:
                 top_system = TopSystem()
-                elem = config_resolve_dn(cookie=self.__cookie,
-                                         dn=top_system.dn)
+                elem = config_resolve_dn(cookie=self.__cookie, dn=top_system.dn)
                 response = self.post_elem(elem)
                 if response.error_code != 0:
                     return False
@@ -504,7 +510,17 @@ class ImcSession(object):
         return False
 
     def _validate_model(self, model):
-        valid_model_prefixes = ["UCSC", "UCS-E", "UCSS", "HX", "APIC-SERVER-", "DN1", "DN2", "DN3", "ULTM"]
+        valid_model_prefixes = [
+            "UCSC",
+            "UCS-E",
+            "UCSS",
+            "HX",
+            "APIC-SERVER-",
+            "DN1",
+            "DN2",
+            "DN3",
+            "ULTM",
+        ]
         valid_models = ["R460-4640810", "C260-BASE-2646"]
 
         if model in valid_models:
@@ -522,12 +538,14 @@ class ImcSession(object):
         """
         from .imcmethodfactory import config_resolve_class
 
-        request = config_resolve_class(cookie=self.__cookie,
-                                       class_id="biosUnit")
+        request = config_resolve_class(cookie=self.__cookie, class_id="biosUnit")
         response = self.post_elem(request)
 
-        if not response or response.error_code != 0 or \
-                len(response.out_configs.child) == 0:
+        if (
+            not response
+            or response.error_code != 0
+            or len(response.out_configs.child) == 0
+        ):
             self.logout()
             return False
 
@@ -547,8 +565,10 @@ class ImcSession(object):
         from .imccoremeta import ImcVersion
         from .imcmethodfactory import config_resolve_dn
         from .mometa.top.TopSystem import TopSystem
-        from .mometa.firmware.FirmwareRunning import FirmwareRunning, \
-            FirmwareRunningConsts
+        from .mometa.firmware.FirmwareRunning import (
+            FirmwareRunning,
+            FirmwareRunningConsts,
+        )
 
         # If the aaaLogin response has the version populated, we do not
         # need to query for it
@@ -558,14 +578,11 @@ class ImcSession(object):
             return
 
         top_system = TopSystem()
-        firmware = FirmwareRunning(top_system,
-                                   FirmwareRunningConsts.DEPLOYMENT_SYSTEM)
-        elem = config_resolve_dn(cookie=self.__cookie,
-                                 dn=firmware.dn)
+        firmware = FirmwareRunning(top_system, FirmwareRunningConsts.DEPLOYMENT_SYSTEM)
+        elem = config_resolve_dn(cookie=self.__cookie, dn=firmware.dn)
         response = self.post_elem(elem)
         if response.error_code != 0:
-            raise ImcException(response.error_code,
-                               response.error_descr)
+            raise ImcException(response.error_code, response.error_descr)
         if len(response.out_config.child) > 0:
             firmware = response.out_config.child[0]
             self._set_version(firmware.version)
@@ -608,8 +625,7 @@ class ImcSession(object):
         if self._validate_connection():
             return True
 
-        elem = aaa_login(in_name=self.__username,
-                         in_password=self.__password)
+        elem = aaa_login(in_name=self.__username, in_password=self.__password)
         response = self.post_elem(elem, timeout=timeout)
         if response.error_code != 0:
             self.__clear()
@@ -657,8 +673,7 @@ class ImcSession(object):
             return True
 
         if response.error_code != 0:
-            raise ImcException(response.error_code,
-                               response.error_descr)
+            raise ImcException(response.error_code, response.error_descr)
 
         self.__clear()
 
@@ -709,6 +724,7 @@ class ImcSession(object):
         Not to be exposed at the handle
         """
         from imcsdk.imccoreutils import IMC_PLATFORM
+
         modular_platform_prefixes = ["UCSC-C3X", "UCSS-S32"]
         if platform:
             self.__platform = platform
@@ -731,10 +747,11 @@ class ImcSession(object):
             return
 
         from .imccoreutils import IMC_PLATFORM
+
         class_ids = {
             IMC_PLATFORM.TYPE_MODULAR: "ComputeServerNode",
-            IMC_PLATFORM.TYPE_CLASSIC: "ComputeRackUnit"
-            }
+            IMC_PLATFORM.TYPE_CLASSIC: "ComputeRackUnit",
+        }
 
         # Check for the right platform
         if self.__platform in class_ids:
@@ -749,6 +766,7 @@ class ImcSession(object):
 
     def add_header(self, header_prop, header_value):
         self.__driver.add_header(header_prop, header_value)
+
 
 def _get_port(port, secure):
     if port:
