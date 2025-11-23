@@ -25,6 +25,7 @@ import logging
 
 from six.moves import range
 from .imcexception import ImcWarning, ImcValidationException
+from .imcdriver import ImcDriver
 
 log = logging.getLogger("imc")
 
@@ -134,7 +135,7 @@ def to_python_propname(word: str) -> str:
     return word.rstrip("_").lower()
 
 
-def convert_to_python_var_name(name):
+def convert_to_python_var_name(name: str) -> str:
     """converts a imc server variable to python recommended format
 
     Args:
@@ -149,19 +150,19 @@ def convert_to_python_var_name(name):
         return "class_"
 
 
-def word_l(word):
+def word_l(word: str) -> str:
     """Method makes the first letter of the given string as lower case."""
 
     return word[0].lower() + word[1:]
 
 
-def word_u(word):
+def word_u(word: str) -> str:
     """Method makes the first letter of the given string as capital."""
 
     return word[0].upper() + word[1:]
 
 
-def make_dn(rn_array):
+def make_dn(rn_array: str) -> str:
     """Method forms Dn out of array of rns."""
 
     return "/".join(rn_array)
@@ -213,7 +214,13 @@ class Progress(object):
         self._percent += self._interval
 
 
-def download_file(driver, file_url, file_dir, file_name, progress=Progress()):
+def download_file(
+    driver: ImcDriver,
+    file_url: str,
+    file_dir: str,
+    file_name: str,
+    progress: Progress = Progress(),
+) -> None:
     """
     Downloads the file from web server
 
