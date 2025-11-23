@@ -23,7 +23,7 @@ from six.moves.urllib.error import HTTPError
 from six.moves.urllib.request import HTTPRedirectHandler, HTTPSHandler
 
 
-log = logging.getLogger('imc')
+log = logging.getLogger("imc")
 
 
 class SmartRedirectHandler(HTTPRedirectHandler):
@@ -31,12 +31,12 @@ class SmartRedirectHandler(HTTPRedirectHandler):
 
     def http_error_301(self, req, fp, code, msg, headers):
         """This is to handle redirection error code 301"""
-        resp_status = [code, headers.get('Location')]
+        resp_status = [code, headers.get("Location")]
         return resp_status
 
     def http_error_302(self, req, fp, code, msg, headers):
         """This is to handle redirection error code 302"""
-        resp_status = [code, headers.get('Location')]
+        resp_status = [code, headers.get("Location")]
         return resp_status
 
 
@@ -61,21 +61,22 @@ class TLS1Connection(httplib.HTTPSConnection):
         # Standard implementation from HTTPSConnection, which is not
         # designed for extension, unfortunately
         if sys.version_info >= (2, 7):
-            sock = socket.create_connection((self.host, self.port),
-                                            self.timeout, self.source_address)
+            sock = socket.create_connection(
+                (self.host, self.port), self.timeout, self.source_address
+            )
         elif sys.version_info >= (2, 6):
-            sock = socket.create_connection((self.host, self.port),
-                                            self.timeout)
+            sock = socket.create_connection((self.host, self.port), self.timeout)
         else:
             sock = socket.create_connection((self.host, self.port))
 
-        if getattr(self, '_tunnel_host', None):
+        if getattr(self, "_tunnel_host", None):
             self.sock = sock
             self._tunnel()
 
         # This is the only difference; default wrap_socket uses SSLv23
-        self.sock = ssl.wrap_socket(sock, self.key_file, self.cert_file,
-                                    ssl_version=ssl.PROTOCOL_TLSv1)
+        self.sock = ssl.wrap_socket(
+            sock, self.key_file, self.cert_file, ssl_version=ssl.PROTOCOL_TLSv1
+        )
 
 
 class TLSHandler(HTTPSHandler):
@@ -99,38 +100,51 @@ class TLSConnection(httplib.HTTPSConnection):
         # Standard implementation from HTTPSConnection, which is not
         # designed for extension, unfortunately
         if sys.version_info >= (2, 7):
-            sock = socket.create_connection((self.host, self.port),
-                                            self.timeout, self.source_address)
+            sock = socket.create_connection(
+                (self.host, self.port), self.timeout, self.source_address
+            )
         elif sys.version_info >= (2, 6):
-            sock = socket.create_connection((self.host, self.port),
-                                            self.timeout)
+            sock = socket.create_connection((self.host, self.port), self.timeout)
         else:
             sock = socket.create_connection((self.host, self.port))
 
-        if getattr(self, '_tunnel_host', None):
+        if getattr(self, "_tunnel_host", None):
             self.sock = sock
             self._tunnel()
 
-        if hasattr(ssl, 'SSLContext'):
+        if hasattr(ssl, "SSLContext"):
             # Since python 2.7.9, tls 1.1 and 1.2 are supported via
             # SSLContext
             ssl_context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
             ssl_context.options |= ssl.OP_NO_SSLv2
             ssl_context.options |= ssl.OP_NO_SSLv3
-            #Since python 3.6 key_file and cert_file was deprecated
-            #latest one for create ssl context is create_default_context
-            if hasattr(self, 'key_file') and hasattr(self, 'cert_file') and self.key_file and self.cert_file: 
-                ssl_context.load_cert_chain(keyfile=self.key_file, certfile=self.cert_file)
+            # Since python 3.6 key_file and cert_file was deprecated
+            # latest one for create ssl context is create_default_context
+            if (
+                hasattr(self, "key_file")
+                and hasattr(self, "cert_file")
+                and self.key_file
+                and self.cert_file
+            ):
+                ssl_context.load_cert_chain(
+                    keyfile=self.key_file, certfile=self.cert_file
+                )
             else:
                 ssl.create_default_context()
             self.sock = ssl_context.wrap_socket(sock)
         else:
             # This is the only difference; default wrap_socket uses SSLv23
-            if hasattr(self, 'key_file') and hasattr(self, 'cert_file') and self.key_file and self.cert_file:
-                self.sock = ssl.wrap_socket(sock, self.key_file, self.cert_file,ssl_version=ssl.PROTOCOL_TLSv1)
+            if (
+                hasattr(self, "key_file")
+                and hasattr(self, "cert_file")
+                and self.key_file
+                and self.cert_file
+            ):
+                self.sock = ssl.wrap_socket(
+                    sock, self.key_file, self.cert_file, ssl_version=ssl.PROTOCOL_TLSv1
+                )
             else:
-                self.sock = ssl.wrap_socket(sock,ssl_version=ssl.PROTOCOL_TLSv1)
-
+                self.sock = ssl.wrap_socket(sock, ssl_version=ssl.PROTOCOL_TLSv1)
 
 
 class ImcDriver(object):
@@ -165,7 +179,8 @@ class ImcDriver(object):
         handlers = [SmartRedirectHandler, tls_handler]
         if self.__proxy:
             proxy_handler = urllib2.request.ProxyHandler(
-                {'http': self.__proxy, 'https': self.__proxy})
+                {"http": self.__proxy, "https": self.__proxy}
+            )
             handlers.append(proxy_handler)
         return handlers
 
@@ -256,16 +271,18 @@ class ImcDriver(object):
                 uri = self.__redirect_uri
             request = self.__create_request(uri=uri, data=data)
             if dump_xml:
-                log.debug('%s ====> %s' % (uri, data))
+                log.debug("%s ====> %s" % (uri, data))
 
             opener = Request.build_opener(*self.__handlers)
             try:
                 response = opener.open(request, timeout=timeout)
             except Exception as e:
                 if "Connection reset by peer".lower() in str(e).lower():
-                    log.error("Please make sure Python version >=2.7.9 "
-                              "and Openssl verion >= 1.0.1 are "
-                              "installed for >= CIMC 3.0")
+                    log.error(
+                        "Please make sure Python version >=2.7.9 "
+                        "and Openssl verion >= 1.0.1 are "
+                        "installed for >= CIMC 3.0"
+                    )
                     raise
                 if "SSL".lower() not in str(e).lower():
                     raise
@@ -276,22 +293,21 @@ class ImcDriver(object):
                 response = opener.open(request, timeout=timeout)
 
             if type(response) is list:
-                if len(response) == 2 and \
-                        (response[0] == 302 or response[0] == 301):
+                if len(response) == 2 and (response[0] == 302 or response[0] == 301):
                     uri = response[1]
                     self.__redirect = True
                     self.__redirect_uri = uri
                     request = self.__create_request(uri=uri, data=data)
                     if dump_xml:
-                        log.debug('%s <==== %s' % (uri, data))
+                        log.debug("%s <==== %s" % (uri, data))
 
                     opener = Request.build_opener(*self.__handlers)
                     response = opener.open(request, timeout=timeout)
                     # response = urllib2.urlopen(request)
             if read:
-                response = response.read().decode('utf-8')
+                response = response.read().decode("utf-8")
                 if dump_xml:
-                    log.debug('%s <==== %s' % (uri, response))
+                    log.debug("%s <==== %s" % (uri, response))
             return response
         except HTTPError as e:
             log.debug(e.headers)
