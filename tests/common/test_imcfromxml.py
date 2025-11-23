@@ -11,13 +11,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from nose.tools import assert_equal
-
 
 def test_001_mo_from_xml():
     import imcsdk.imcxmlcodec as xc
 
-    response_str = '''
+    response_str = r"""
 <configResolveClass cookie="0002618494/31e2450c-0262-1262-8802-0d8fd9f6083c" response="yes" classId="computeRackUnit">
 <outConfigs>
 <computeRackUnit dn="sys/rack-unit-1" adminPower="policy" availableMemory="131072" model="UCSC-C240-M3L" memorySpeed="1600" name="UCS C240 M3L" numOfAdaptors="1" numOfCores="16" numOfCoresEnabled="16" numOfCpus="2" numOfEthHostIfs="2" numOfFcHostIfs="2" numOfThreads="32" operPower="on" originalUuid="4A42480B-345D-4CD0-8824-A399795E279C" presence="equipped" serverId="1" serial="FCH1752V07Z" totalMemory="131072" usrLbl="hffgfg" uuid="4A42480B-345D-4CD0-8824-A399795E279C" vendor="Cisco Systems Inc" cimcResetReason="watchdog-reset">
@@ -30,12 +28,15 @@ def test_001_mo_from_xml():
 </computeRackUnit>
 </outConfigs>
 </configResolveClass>
-    '''
+    """
 
     response = xc.from_xml_str(response_str)
-    assert_equal(response.out_configs.child[0].__class__.__name__,
-                 'ComputeRackUnit')
-    assert_equal(response.out_configs.child[0].child[0].__class__.__name__,
-                 'NetworkAdapterUnit')
-    assert_equal(response.out_configs.child[0].child[0].child[0].__class__.__name__,
-                 'NetworkAdapterEthIf')
+    assert response.out_configs.child[0].__class__.__name__ == "ComputeRackUnit"
+    assert (
+        response.out_configs.child[0].child[0].__class__.__name__
+        == "NetworkAdapterUnit"
+    )
+    assert (
+        response.out_configs.child[0].child[0].child[0].__class__.__name__
+        == "NetworkAdapterEthIf"
+    )

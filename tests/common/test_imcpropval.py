@@ -11,47 +11,40 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from nose.tools import *
+import pytest
 from imcsdk.mometa.compute.ComputeRackUnit import ComputeRackUnit
 from imcsdk.mometa.power.PowerBudget import PowerBudget
 
-obj = None
 
-
+@pytest.fixture
 def setup_func():
-    global obj
-    obj = ComputeRackUnit(parent_mo_or_dn="sys", server_id="1")
-
-def teardown_func():
-    pass
+    return ComputeRackUnit(parent_mo_or_dn="sys", server_id="1")
 
 
-@with_setup(setup_func, teardown_func)
-@raises(Exception)
-def test_001_set_ro_property():
+def test_001_set_ro_property(setup_func):
     # This is a read only property
     # Should fail with an exception
-    obj.available_memory = "22334"
+    with pytest.raises(Exception):
+        setup_func.available_memory = "22334"
 
 
-@with_setup(setup_func, teardown_func)
-def test_002_set_rw_property():
+def test_002_set_rw_property(setup_func):
     # This is a read write property.
     # Should happen without any issues
-    obj.status = "created"
+    setup_func.status = "created"
+    assert setup_func.status == "created"
 
 
-@with_setup(setup_func(), teardown_func())
-@raises(Exception)
-def test_003_set_naming_property():
+def test_003_set_naming_property(setup_func):
     # This is a naming property. so, it is create only
     # Should fail with an exception
-    obj.server_id = "15"
+    with pytest.raises(Exception):
+        setup_func.server_id = "15"
 
 
 def test_004_set_rw_ro_property():
-    obj = PowerBudget(parent_mo_or_dn='sys/rack-unit-1')
-    obj.status = 'modified'
+    obj = PowerBudget(parent_mo_or_dn="sys/rack-unit-1")
+    obj.status = "modified"
 
-    obj = PowerBudget(parent_mo_or_dn='sys/chassis-1/server-1')
-    obj.status = 'modified'
+    obj = PowerBudget(parent_mo_or_dn="sys/chassis-1/server-1")
+    obj.status = "modified"
