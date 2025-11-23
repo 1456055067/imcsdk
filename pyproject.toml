@@ -1,0 +1,31 @@
+[project]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Natural Language :: English",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+]
+name = "imcsdk"
+version = "0.9.18"
+description = "python SDK for Cisco UCS IMC"
+readme = "README.md"
+requires-python = ">=3.14"
+license = { file = "LICENSE" }
+keywords = ["imcsdk"]
+dependencies = ["setuptools", "pyparsing", "six"]
+
+[dependency-groups]
+dev = [
+    "bump2version>=1.0.1",
+    "flake8>=7.3.0",
+    "mock>=5.2.0",
+    "nose>=1.3.7",
+    "pytest",
+    "wheel>=0.45.1",
+]
