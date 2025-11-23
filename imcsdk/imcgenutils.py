@@ -22,57 +22,116 @@ import platform
 import re
 import subprocess
 import logging
-import six
 
 from six.moves import range
 from .imcexception import ImcWarning, ImcValidationException
 
-log = logging.getLogger('imc')
+log = logging.getLogger("imc")
 
 
-AFFIRMATIVE_LIST = ['true', 'True', 'TRUE', True, 'yes', 'Yes', 'YES']
+AFFIRMATIVE_LIST = ["true", "True", "TRUE", True, "yes", "Yes", "YES"]
 
 reserved_keywords = [
-    "and", "as", "assert", "break", "class", "continue", "def", "del", "elif",
-    "else", "except", "exec", "finally", "for", "from", "global", "if",
-    "import", "in", "is", "lambda", "not", "or", "pass", "print", "raise",
-    "return", "try", "while", "with", "yield"]
+    "and",
+    "as",
+    "assert",
+    "break",
+    "class",
+    "continue",
+    "def",
+    "del",
+    "elif",
+    "else",
+    "except",
+    "exec",
+    "finally",
+    "for",
+    "from",
+    "global",
+    "if",
+    "import",
+    "in",
+    "is",
+    "lambda",
+    "not",
+    "or",
+    "pass",
+    "print",
+    "raise",
+    "return",
+    "try",
+    "while",
+    "with",
+    "yield",
+]
 
 
-def is_python_reserved(word):
-    """
-    Check if it is python reserved word.
-    """
-
+def is_python_reserved(word: str) -> bool:
+    """Check if it is python reserved word."""
     return word in reserved_keywords
 
 
-def to_safe_prop(word):
+def to_safe_prop(word: str) -> str:
     """
     Check if it is python reserved word, if yes returns word after prefixing
     it with 'r_'
     """
-    return 'r_' + word if is_python_reserved(word) else word
+    return "r_" + word if is_python_reserved(word) else word
 
 
-def from_safe_prop(word):
+def from_safe_prop(word: str) -> str:
     """
     removes 'r_' from word.
     """
     return re.sub("^r_", "", word)
 
 
-def to_python_propname(word):
+def to_python_propname(word: str) -> str:
     """
-    Converts any word to lowercase word separated by underscore
+    Converts any word to a valid Python property name in snake_case.
+
+    Args:
+        word (str)
+
+    Returns:
+        word.rstrip("_").lower() (str)
+
+    Handles:
+    - CamelCase and PascalCase conversion
+    - Special characters (/, -, :, space, +) to underscores
+    - Python reserved keywords (adds prefix)
+    - Multiple underscores cleanup
+    - Leading/trailing underscore removal
+
+    Example:
+        >>> to_python_propname("HTTPSConnection")
+        'https_connection'
+        >>> to_python_propname("user-name/value")
+        'user_name_value'
     """
-    return re.sub('_+', '_',
-                  re.sub('^_', '',
-                    re.sub('[/\-: +]', '_',
-                      re.sub('([A-Z]+)([A-Z])([a-z0-9])', '\g<1>_\g<2>\g<3>',
-                        re.sub('([a-z0-9])([A-Z])', '\g<1>_\g<2>', (word,
-                          to_safe_prop(word))[is_python_reserved(word)])
-                             )))).lower()
+
+    # Convert camelCase/PascalCase to snake_case
+    # Insert underscore before uppercase letters following lowercase/digits
+    word = re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", word)
+
+    # Handle sequences like "HTTPSConnection" -> "HTTPS_Connection"
+    word = re.sub(r"([A-Z]+)([A-Z])([a-z0-9])", r"\1_\2\3", word)
+
+    # Replace special characters with underscores
+    word = re.sub(r"[/\-: +]", "_", word)
+
+    # Remove leading underscores
+    word = re.sub(r"^_+", "", word)
+
+    # Replace multiple consecutive underscores with single underscore
+    word = re.sub(r"_+", "_", word)
+
+    # Handle Python reserved keywords first
+    if is_python_reserved(word):
+        word = to_safe_prop(word)
+
+    # Remove trailing underscores and convert to lowercase
+    return word.rstrip("_").lower()
 
 
 def convert_to_python_var_name(name):
@@ -83,7 +142,7 @@ def convert_to_python_var_name(name):
     """
 
     pattern = re.compile(r"(?<!^)(?=[A-Z])")
-    python_var = re.sub(pattern, '_', name).lower()
+    python_var = re.sub(pattern, "_", name).lower()
     if python_var != "class":
         return python_var
     else:
@@ -91,28 +150,28 @@ def convert_to_python_var_name(name):
 
 
 def word_l(word):
-    """ Method makes the first letter of the given string as lower case. """
+    """Method makes the first letter of the given string as lower case."""
 
     return word[0].lower() + word[1:]
 
 
 def word_u(word):
-    """ Method makes the first letter of the given string as capital. """
+    """Method makes the first letter of the given string as capital."""
 
     return word[0].upper() + word[1:]
 
 
 def make_dn(rn_array):
-    """ Method forms Dn out of array of rns. """
+    """Method forms Dn out of array of rns."""
 
-    return '/'.join(rn_array)
+    return "/".join(rn_array)
 
 
 class FileReadStream(object):
     """Internal class to show the progress while reading file."""
 
     def __init__(self, path, progress_cb):
-        self._fhandle = open(path, 'rb')
+        self._fhandle = open(path, "rb")
         # Set the seek positin to the end of the file
         # and calcualte the total file size
         self._fhandle.seek(0, os.SEEK_END)
@@ -133,7 +192,7 @@ class FileReadStream(object):
 
 
 class Progress(object):
-    """ Internal class to show the progress in chunks of custom percentage """
+    """Internal class to show the progress in chunks of custom percentage"""
 
     def __init__(self, interval=10):
         self._seen = 0.0
@@ -177,14 +236,14 @@ def download_file(driver, file_url, file_dir, file_name, progress=Progress()):
 
     if sys.version_info > (3, 0):
         # Python 3 code in this block
-        file_size = int(response.headers['Content-Length'])
+        file_size = int(response.headers["Content-Length"])
     else:
         # Python 2 code in this block
         file_size = int(response.info().getheaders("Content-Length")[0])
 
     print(("Downloading: %s Bytes: %s" % (file_name, file_size)))
 
-    file_handle = open(destination_file, 'wb')
+    file_handle = open(destination_file, "wb")
     block_sz = 64
     while True:
         r_buffer = response.read(128 * block_sz)
@@ -193,7 +252,7 @@ def download_file(driver, file_url, file_dir, file_name, progress=Progress()):
 
         file_handle.write(r_buffer)
         progress.update(file_size, len(r_buffer))
-    print('Downloading Finished.')
+    print("Downloading Finished.")
     file_handle.close()
 
 
@@ -222,9 +281,8 @@ def upload_file(driver, uri, file_dir, file_name, progress=Progress()):
 
 
 def check_registry_key(java_key):
-    """ Method checks for the java in the registry entries. """
-    from winreg import ConnectRegistry, HKEY_LOCAL_MACHINE, OpenKey, \
-             QueryValueEx
+    """Method checks for the java in the registry entries."""
+    from winreg import ConnectRegistry, HKEY_LOCAL_MACHINE, OpenKey, QueryValueEx
 
     path = None
     try:
@@ -287,44 +345,45 @@ def get_java_installation_path():
     """
 
     if platform.system() in ["Linux", "Darwin"]:
-        path = os.environ.get('JAVA_HOME')
+        path = os.environ.get("JAVA_HOME")
         # is javaws in $JAVA_HOME?
-        if path and is_binary_in_path(path, 'javaws'):
-            return path + '/' + 'javaws'
+        if path and is_binary_in_path(path, "javaws"):
+            return path + "/" + "javaws"
 
         # is javaws available in system path?
-        path = get_binary_path('javaws')
+        path = get_binary_path("javaws")
         if path:
-            return path + '/' + 'javaws'
+            return path + "/" + "javaws"
 
         # javaws was not found
         raise ImcValidationException(
             "Please make sure JAVA is installed and variable JAVA_HOME"
-            "is set properly.")
+            "is set properly."
+        )
 
     # Get JavaPath for Windows
     # elif os.name == "nt":
     elif platform.system() == "Windows" or platform.system() == "Microsoft":
 
-        path = os.environ.get('JAVA_HOME')
+        path = os.environ.get("JAVA_HOME")
 
         if path is None:
-            path = check_registry_key(
-                r"SOFTWARE\\JavaSoft\\Java Runtime Environment\\")
+            path = check_registry_key(r"SOFTWARE\\JavaSoft\\Java Runtime Environment\\")
 
         if path is None:  # Check for 32 bit Java on 64 bit machine.
             path = check_registry_key(
-                r"SOFTWARE\\Wow6432Node\\JavaSoft\\Java Runtime Environment")
+                r"SOFTWARE\\Wow6432Node\\JavaSoft\\Java Runtime Environment"
+            )
 
         if not path:
             raise ImcValidationException("Please make sure JAVA is installed.")
         else:
-            path = os.path.join(path, 'bin')
-            path = os.path.join(path, 'javaws.exe')
+            path = os.path.join(path, "bin")
+            path = os.path.join(path, "javaws.exe")
             if not os.path.exists(path):
                 raise ImcValidationException(
-                    "javaws.exe is not installed on System at path <%s>." % (
-                        path))
+                    "javaws.exe is not installed on System at path <%s>." % (path)
+                )
             else:
                 return path
 
@@ -334,8 +393,8 @@ def check_output(*popenargs, **kwargs):
     Internal method to handle upload/download data from server.
     """
 
-    if 'stdout' in kwargs:
-        raise ValueError('stdout argument not allowed, it will be overridden.')
+    if "stdout" in kwargs:
+        raise ValueError("stdout argument not allowed, it will be overridden.")
     process = subprocess.Popen(stdout=subprocess.PIPE, *popenargs, **kwargs)
     output, unused_err = process.communicate()
     ret_code = process.poll()
@@ -357,8 +416,9 @@ def get_java_version():
     except Exception:
         subprocess.check_output = check_output
 
-    java_ver_full_str = subprocess.check_output(["java", "-version"],
-                                                stderr=subprocess.STDOUT)
+    java_ver_full_str = subprocess.check_output(
+        ["java", "-version"], stderr=subprocess.STDOUT
+    )
 
     java_ver_full_str = java_ver_full_str.decode()
     java_ver_match = re.match(r'java version.*?"(.*?)"', java_ver_full_str)
@@ -377,8 +437,8 @@ def get_md5_sum(filename):
     import hashlib
 
     md5_obj = hashlib.md5()
-    file_handler = open(filename, 'rb')
-    for chunk in iter(lambda: file_handler.read(128 * md5_obj.block_size), b''):
+    file_handler = open(filename, "rb")
+    for chunk in iter(lambda: file_handler.read(128 * md5_obj.block_size), b""):
         md5_obj.update(chunk)
 
     file_handler.close()
@@ -411,8 +471,8 @@ def expand_key(key, clen):
     for i_cnt in range(blocks):
         seed = hashlib.md5(key + seed).digest()
         x_key.append(seed)
-    j_str = ''.join(x_key)
-    return array('L', j_str)
+    j_str = "".join(x_key)
+    return array("L", j_str)
 
 
 def encrypt_password(password, key):
@@ -430,13 +490,21 @@ def encrypt_password(password, key):
     import base64
 
     h_hash = get_sha_hash
-    uhash = h_hash(','.join(str(x) for x in
-                            [repr(time()), repr(os.getpid()),
-                             repr(len(password)),
-                             password, key]))[:16]
-    k_enc, k_auth = h_hash('enc' + key + uhash), h_hash('auth' + key + uhash)
+    uhash = h_hash(
+        ",".join(
+            str(x)
+            for x in [
+                repr(time()),
+                repr(os.getpid()),
+                repr(len(password)),
+                password,
+                key,
+            ]
+        )
+    )[:16]
+    k_enc, k_auth = h_hash("enc" + key + uhash), h_hash("auth" + key + uhash)
     pwd_len = len(password)
-    password_stream = array('L', password + '0000'[pwd_len & 3:])
+    password_stream = array("L", password + "0000"[pwd_len & 3 :])
     x_key = expand_key(k_enc, pwd_len + 4)
 
     for i_cnt in range(len(password_stream)):
@@ -446,7 +514,7 @@ def encrypt_password(password, key):
     auth = hmac.new(cipher_t, k_auth).digest()
     encrypt_str = cipher_t + auth[:8]
     encoded_str = base64.encodestring(encrypt_str)
-    encrypted_password = encoded_str.rstrip('\n')
+    encrypted_password = encoded_str.rstrip("\n")
     return encrypted_password
 
 
@@ -466,14 +534,14 @@ def decrypt_password(cipher, key):
     cipher_len = len(cipher) - 16 - 8
 
     uhash = cipher[:16]
-    password_stream = cipher[16:-8] + "0000"[cipher_len & 3:]
+    password_stream = cipher[16:-8] + "0000"[cipher_len & 3 :]
     # auth = cipher[-8:]
 
-    k_enc = h_hash('enc' + key + uhash)
+    k_enc = h_hash("enc" + key + uhash)
     # k_auth = h_hash('auth' + key + uhash)
     # vauth = hmac.new(cipher[-8:], k_auth, sha).digest()[:8]
 
-    password_stream = array('L', password_stream)
+    password_stream = array("L", password_stream)
     x_key = expand_key(k_enc, cipher_len + 4)
 
     for i in range(len(password_stream)):
@@ -481,4 +549,3 @@ def decrypt_password(cipher, key):
 
     decrypted_password = password_stream.tostring()[:cipher_len]
     return decrypted_password
-
